@@ -1,0 +1,273 @@
+// This file is part of nand2tetris, as taught in The Hebrew University,
+// and was written by Aviv Yaish, and is published under the Creative 
+// Common Attribution-NonCommercial-ShareAlike 3.0 Unported License 
+// https://creativecommons.org/licenses/by-nc-sa/3.0/
+// It is an extension to the specifications given in  
+// https://www.nand2tetris.org (Shimon Schocken and Noam Nisan, 2017)
+// as allowed by the Creative Common Attribution-NonCommercial-ShareAlike 3.0 
+// File name: projects/12/Screen.jack
+
+/**
+ * A library of functions for displaying graphics on the screen.
+ * The Hack physical screen consists of 256 rows (indexed 0..255, top to bottom)
+ * of 512 pixels each (indexed 0..511, left to right). The top left pixel on 
+ * the screen is indexed (0,0).
+ */
+class Screen {
+
+    static Array screen;
+    static int curColor; // true - black, false - white.
+    static int BLACK;
+    static int WHITE;
+    static int adress;
+
+
+    /** Initializes the Screen. */
+    function void init() {
+    let screen = 16384;
+    let BLACK = -1;
+    let WHITE = 0;
+    let curColor = BLACK;
+    return;
+    }
+
+    /** Erases the entire screen. */
+    // we can improve it using diffrent methods
+    function void clearScreen() {
+      var int counter;
+      let counter = 0;
+      let curColor = WHITE;
+      do Screen.drawRectangle(0,0,511,255);
+      let curColor = BLACK;
+      return;
+      
+    }  
+
+    /** Sets the current color, to be used for all subsequent drawXXX commands.
+     *  Black is represented by true, white by false. */
+    function void setColor(boolean b) {
+      if (b) {let curColor = BLACK;}
+      else   {let curColor = WHITE;}
+    return;
+    }
+
+    /** Draws the (x,y) pixel, using the current color. */
+    function void drawPixel(int x, int y) {
+		// For this function, you will need to calculate the value x%16.
+		// It should be calculated quickly without using multiplication or
+		// division, using exactly one basic math/logical operation.
+		// In addition, calculating 16384 + y * 32 + x/16 should not use
+		// division or multiplication.
+
+    // maybe add a functionalty to care about the color. (just by fliping onePix)
+
+    //                             maybe for math.....
+
+    var int Y32;
+    var int Xmod16;
+    var int Xdiv16;
+    var int address;
+    var int counter;
+    var int onePix;
+ 
+    // multiply y by 32:
+    let Xdiv16  = (#(#(#(#x)))); // # -> shift right
+    let Y32 = (^(^(^(^(^y))))); // # -> shift left
+    let Xmod16 = x&(15);
+    let address = Y32 + Xdiv16;
+    
+    // make a bit with one cell on at the Xmod16 location.
+    let counter = 0;
+    let onePix = 1;
+    while (counter < Xmod16){ // multiply one pix Xmod16 -> to shift a single pixel to the Xmod locatin.
+      let onePix = ^onePix;
+      let counter = counter + 1;
+    }
+    if (curColor = BLACK){
+      let screen[address] = screen[address] | onePix;} // draw the pixel by adding at to the relevant cell.
+    else{
+      let screen[address] = screen[address] & (~onePix);} // draw it white
+    return;
+    }
+
+    /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
+    function void drawLine(int x1, int y1, int x2, int y2) {
+		// The case where x1 != x2 and y1 != y2 should be implemented without
+		// multiplication or division.
+		// Also, the case where y1 == y2 can be implemented efficiently by
+		// trying to draw as many pixels as possible in a single assignment,
+		// similarly to Fill in project 4.
+    
+    // utality for adresess
+    var int Y32;
+    var int Xmod16;
+    var int Xdiv16;
+    var int address;
+    var int counter;
+    var int i;
+    var int onePix;
+    var int secPix;
+
+     // utality for line atributes
+    var int lineLength;
+    var int initX;
+    var int initY;
+    var int endX;
+    var int endY;
+    
+    var int x, y, diff, dx, dy, a, b; // utalitiies for y1 != y2.
+
+    if (y1 = y2){ // draw horizontal line (y1 = y2). (maybe split to another function)
+
+      let lineLength = x1-x2;
+      let lineLength = Math.abs(lineLength); 
+      let initX = Math.min(x1,x2);
+
+      let Xdiv16  = (#(#(#(#initX)))); // # -> shift right
+      let Y32 = (^(^(^(^(^y1))))); // # -> shift left
+      let Xmod16 = initX&(15);
+      let address = Y32 + Xdiv16;
+      let onePix = 1;
+      let counter = 0;
+      let i = 0;
+
+      while (counter < Xmod16){ // multiply one pix Xmod16 -> to shift a single pixel to the Xmod locatin.
+        let onePix = ^onePix;
+        let counter = counter + 1;
+      }
+
+      let counter = 0;
+      
+      // onePix -> shows the initX mod16 location
+      while (counter < lineLength){
+        if ((i > 0) & ((lineLength - counter) > 15)){ // we can fill a register with one chank 
+          if (curColor = WHITE){
+            let screen[address + i] = WHITE;
+          }
+          else{
+            let screen[address + i] = BLACK;
+          }
+          let Xmod16 = 16;                 // brute dont enter the loop.
+          let onePix = -1;                 // fill the entire register.
+          let counter = counter + 16;
+        }   
+        while (Xmod16 < 16){ 
+          let secPix = onePix;              // we finished a register
+          let onePix = (^onePix) | secPix;  // adds a pixel to the register
+          let counter = counter + 1;
+          let Xmod16 = Xmod16 + 1;
+          if (counter = lineLength){        // brute get out of the loop.
+            let Xmod16 = 16; 
+          }
+        }
+        
+        if (curColor = WHITE){
+          let onePix = ~onePix;
+          let screen[address + i] = screen[address + i] & onePix;
+        }
+        else{
+          let screen[address + i] = screen[address + i] | onePix;
+        }
+        let i = i + 1;
+        let Xmod16 = 0;
+        let onePix = 1;
+      }
+    }
+
+    else{
+      let initX = Math.min(x1,x2);
+      if (x1 = initX){
+        let initY = y1;
+        let endY = y2;
+        let endX = x2;
+      }
+      else{ 
+        let initY = y2; 
+        let endY = y1; 
+        let endX = x1;
+      }
+        // from now (initX, initY) , (endX,endY).
+      
+       let diff = 0; 
+       let dx = endX - initX;
+       let dy = Math.abs(endY - initY);
+       let x = initX;
+       let y = initY;
+
+      if (endY > initY){  // we are moving down
+       let a = 0;
+       let b = 0;
+       while ((a < dx) & (b < dy)){ // 
+          do Screen.drawPixel(x+a,y+b);
+          if (diff<0) {
+            let a = a+1;
+            let diff = diff + dy;
+          }
+          else {
+            let b = b+1;
+            let diff = diff - dx;
+          }
+       }
+      }
+      else{ // we are moving up
+       let a = 0;
+       let b = 0;
+       while ((a < dx) & (b < dy)){ // 
+          do Screen.drawPixel(x+a,y-b);
+          if (diff<0) {
+            let a = a+1;
+            let diff = diff + dy;
+          }
+          else {
+            let b = b+1;
+            let diff = diff - dx;
+          }
+       }
+      }
+
+      if (x1 = x2){
+        let i = 0;
+        let lineLength = y1-y2;
+        let lineLength = Math.abs(lineLength); 
+        let initY = Math.min(y1,y2);
+        while (i < lineLength){
+          do Screen.drawPixel(x1,initY + i);
+          let i = i +1;
+        }
+      }
+  }
+    return;
+  }
+  
+    /** Draws a filled rectangle whose top left corner is (x1, y1)
+     * and bottom right corner is (x2,y2), using the current color. */
+    function void drawRectangle(int x1, int y1, int x2, int y2) {
+      var int dx, dy, i;
+      
+      let dx = Math.abs(x1-x2);
+      let dy = Math.abs(y1-y2);
+      let i = 0;
+
+      while (i<dy){
+        do Screen.drawLine(x1, y1 +i ,x1+dx, y1 + i);
+        let i = i+1;
+      }
+    return;
+    }
+
+    /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
+    function void drawCircle(int x, int y, int r) {
+      var int dy, counter, rSqr, dx;
+      let counter = 0;
+      let dy = - r;
+      let rSqr = r*r;
+
+      while (~(dy > r)){
+        let dx = Math.sqrt(rSqr-(dy*dy));
+        do Screen.drawLine(x-dx, y+dy, x+dx, y+dy);
+        let dy = dy + 1;
+      }
+      return;
+    }
+}
+
